@@ -4,24 +4,24 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.nastalgua.storage.commands.StorageCommand;
-import com.nastalgua.storage.events.GUIBlocker;
+import com.nastalgua.storage.events.GUIListener;
 
 public class Main extends JavaPlugin {
 
     @Override
     public void onEnable() {
 
-        System.out.println("ChestDepth is enabled!");
+        System.out.println("StorageDepth is enabled!");
 
         getCommand("storage").setExecutor(new StorageCommand());
 
-        Bukkit.getPluginManager().registerEvents(new GUIBlocker(), this);
+        Bukkit.getPluginManager().registerEvents(new GUIListener(), this);
 
     }
 
     @Override
     public void onDisable() {
-        System.out.println("ChestDepth is disabled...");
+        System.out.println("StorageDepth is disabled...");
     }
 
 }

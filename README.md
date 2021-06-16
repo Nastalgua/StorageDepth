@@ -1,4 +1,4 @@
-# Storage Depth
+# StorageDepth
 StorageDepth is a plugin that gives more flexibility to storage blocks.
 
 ## What it offers
