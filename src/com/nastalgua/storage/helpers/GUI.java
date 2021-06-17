@@ -17,6 +17,7 @@ import java.util.List;
 public class GUI {
 
     public static Pagination<OfflinePlayer> addPlayersPagination = new Pagination<>(Main.testPlayers);
+    public static Pagination<OfflinePlayer> removePlayersPagination = new Pagination<>(Main.testPlayers);
 
     public static void openChestGUI(Player player) {
         Inventory gui = Bukkit.createInventory(null, 27, player.getDisplayName() + "'s Chest");
@@ -59,25 +60,29 @@ public class GUI {
         player.openInventory(gui);
     }
 
+    // TODO: Add persistent data and filter out player already added
     public static void showAddPlayers(Player player) {
-        // TODO: Pagination
         Inventory gui = Bukkit.createInventory(null, 27, "Add Player");
-        // Bukkit.getServer().getOnlinePlayers().toArray()
-//        addPlayersPagination = new Pagination<>(Main.testPlayers);
-        addPlayersPagination.updateList(Main.testPlayers);
 
-        addPlayersPagination.loadPage(gui, Material.PLAYER_HEAD, null, null, player);
+        List<OfflinePlayer> players = Main.getOnlinePlayers();
+
+        addPlayersPagination.updateList(players);
+        addPlayersPagination.loadPage(gui, Material.PLAYER_HEAD, null, null, true);
 
         player.openInventory(gui);
     }
 
     public static void showRemovePlayers(Player player) {
-        Inventory gui = Bukkit.createInventory(null, 54, "Remove Players");
+        Inventory gui = Bukkit.createInventory(null, 27, "Remove Players");
+
+        removePlayersPagination.updateList(Main.testPlayers);
+        removePlayersPagination.loadPage(gui, Material.PLAYER_HEAD, null, null, true);
+
         player.openInventory(gui);
     }
 
     public static void showHistory(Player player) {
-        Inventory gui = Bukkit.createInventory(null, 54, "History");
+        Inventory gui = Bukkit.createInventory(null, 27, "History");
         player.openInventory(gui);
     }
 

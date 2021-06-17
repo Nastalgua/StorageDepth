@@ -15,6 +15,8 @@ import org.bukkit.inventory.Inventory;
 
 public class GUIListener implements Listener {
 
+    private final String[] GUINames = { "Add Players", "History", "Remove Players" };
+
     public GUIListener() {}
 
     @EventHandler
@@ -22,40 +24,38 @@ public class GUIListener implements Listener {
 
         Player player = (Player) event.getWhoClicked();
 
-        if (StorageCommand.checkingStorage.contains(player.getName()) && !invalidClick(player, event))
+        if (StorageCommand.checkingStorage.contains(player.getName()) && !invalidClick(event, player)) {
             event.setCancelled(true);
+        }
 
-
-        if (!invalidClick(player, event)) {
+        if (!invalidClick(event, player)) {
 
             if (event.getCurrentItem() == null) return;
 
             if (event.getCurrentItem().getType() == Material.EMERALD_BLOCK) {
                 StorageCommand.checkingStorage.add(player.getName());
+
                 GUI.showAddPlayers(player);
+                Pagination.currentGUI = Pagination.GUIStatus.ADD_PLAYERS;
+
             } else if (event.getCurrentItem().getType() == Material.REDSTONE_BLOCK) {
                 StorageCommand.checkingStorage.add(player.getName());
+
                 GUI.showRemovePlayers(player);
+                Pagination.currentGUI = Pagination.GUIStatus.REMOVE_PLAYERS;
+
             } else if (event.getCurrentItem().getType() == Material.COBWEB) {
                 StorageCommand.checkingStorage.add(player.getName());
+
                 GUI.showHistory(player);
+                Pagination.currentGUI = Pagination.GUIStatus.HISTORY;
+
             }
 
-            if (event.getCurrentItem().getItemMeta().getDisplayName().equals("Next Page")) {
-                GUI.addPlayersPagination.currentPage++;
+            // make sure player doesn't click anything other than gui
+            if (event.getCurrentItem().getType() == Material.AIR) return;
 
-                Inventory gui = Bukkit.createInventory(null, 27, "Add Player");
-                GUI.addPlayersPagination.loadPage(gui, Material.PLAYER_HEAD, null, null, player);
-
-                player.openInventory(gui);
-            } else if (event.getCurrentItem().getItemMeta().getDisplayName().equals("Previous Page")) {
-                GUI.addPlayersPagination.currentPage--;
-
-                Inventory gui = Bukkit.createInventory(null, 27, "Add Player");
-                GUI.addPlayersPagination.loadPage(gui, Material.PLAYER_HEAD, null, null, player);
-
-                player.openInventory(gui);
-            }
+            changePage(event, player);
 
         }
 
@@ -72,7 +72,7 @@ public class GUIListener implements Listener {
 
     }
 
-    public boolean invalidClick(Player player, InventoryClickEvent event) {
+    public boolean invalidClick(InventoryClickEvent event, Player player) {
 
         if (StorageCommand.checkingStorage.contains(player.getName())) {
             return (event.getSlot() == -999
@@ -82,6 +82,54 @@ public class GUIListener implements Listener {
 
         return false;
 
+    }
+
+    private void changePage(InventoryClickEvent event, Player player) {
+        if (event.getCurrentItem().getItemMeta().getDisplayName().equals(Pagination.RIGHT_NAME)) {
+            Inventory gui = Bukkit.createInventory(null, 27, GUINames[Pagination.currentGUI.toInt()]);
+            StorageCommand.checkingStorage.add(player.getName());
+
+            switch (Pagination.currentGUI) {
+                case ADD_PLAYERS:
+                    GUI.addPlayersPagination.currentPage++;
+                    GUI.addPlayersPagination.loadPage(gui, Material.PLAYER_HEAD, null, null, true);
+                    break;
+                case HISTORY:
+
+                    break;
+                case REMOVE_PLAYERS:
+                    GUI.removePlayersPagination.currentPage++;
+                    GUI.removePlayersPagination.loadPage(gui, Material.PLAYER_HEAD, null, null, true);
+                    break;
+                default:
+
+            }
+
+            player.openInventory(gui);
+
+        } else if (event.getCurrentItem().getItemMeta().getDisplayName().equals(Pagination.LEFT_NAME)) {
+            Inventory gui = Bukkit.createInventory(null, 27, GUINames[Pagination.currentGUI.toInt()]);
+            StorageCommand.checkingStorage.add(player.getName());
+
+            switch (Pagination.currentGUI) {
+                case ADD_PLAYERS:
+                    GUI.addPlayersPagination.currentPage--;
+                    GUI.addPlayersPagination.loadPage(gui, Material.PLAYER_HEAD, null, null, true);
+                    break;
+                case HISTORY:
+
+                    break;
+                case REMOVE_PLAYERS:
+                    GUI.removePlayersPagination.currentPage--;
+                    GUI.removePlayersPagination.loadPage(gui, Material.PLAYER_HEAD, null, null, true);
+                    break;
+                default:
+
+            }
+
+            player.openInventory(gui);
+
+        }
     }
 
 }

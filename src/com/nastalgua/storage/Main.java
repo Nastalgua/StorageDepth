@@ -3,6 +3,7 @@ package com.nastalgua.storage;
 import com.nastalgua.storage.helpers.Pagination;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.nastalgua.storage.commands.StorageCommand;
@@ -43,4 +44,13 @@ public class Main extends JavaPlugin {
         System.out.println("StorageDepth is disabled...");
     }
 
+    public static List<OfflinePlayer> getOnlinePlayers() {
+        List<OfflinePlayer> players = new ArrayList<>();
+
+        for (Player player : Bukkit.getServer().getOnlinePlayers()) {
+            players.add(player);
+        }
+
+        return players;
+    }
 }
