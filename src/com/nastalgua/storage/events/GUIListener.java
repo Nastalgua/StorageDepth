@@ -3,12 +3,15 @@ package com.nastalgua.storage.events;
 import com.nastalgua.storage.commands.StorageCommand;
 
 import com.nastalgua.storage.helpers.GUI;
+import com.nastalgua.storage.helpers.Pagination;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.inventory.Inventory;
 
 public class GUIListener implements Listener {
 
@@ -19,13 +22,9 @@ public class GUIListener implements Listener {
 
         Player player = (Player) event.getWhoClicked();
 
-        System.out.println("Contains player: " + StorageCommand.checkingStorage.contains(player.getName()));
-        System.out.println("Valid Click: " + !invalidClick(player, event));
-
-        if (StorageCommand.checkingStorage.contains(player.getName()) && !invalidClick(player, event)) {
-            System.out.println("Cancel event");
+        if (StorageCommand.checkingStorage.contains(player.getName()) && !invalidClick(player, event))
             event.setCancelled(true);
-        }
+
 
         if (!invalidClick(player, event)) {
 
@@ -40,6 +39,22 @@ public class GUIListener implements Listener {
             } else if (event.getCurrentItem().getType() == Material.COBWEB) {
                 StorageCommand.checkingStorage.add(player.getName());
                 GUI.showHistory(player);
+            }
+
+            if (event.getCurrentItem().getItemMeta().getDisplayName().equals("Next Page")) {
+                GUI.addPlayersPagination.currentPage++;
+
+                Inventory gui = Bukkit.createInventory(null, 27, "Add Player");
+                GUI.addPlayersPagination.loadPage(gui, Material.PLAYER_HEAD, null, null, player);
+
+                player.openInventory(gui);
+            } else if (event.getCurrentItem().getItemMeta().getDisplayName().equals("Previous Page")) {
+                GUI.addPlayersPagination.currentPage--;
+
+                Inventory gui = Bukkit.createInventory(null, 27, "Add Player");
+                GUI.addPlayersPagination.loadPage(gui, Material.PLAYER_HEAD, null, null, player);
+
+                player.openInventory(gui);
             }
 
         }
@@ -58,6 +73,7 @@ public class GUIListener implements Listener {
     }
 
     public boolean invalidClick(Player player, InventoryClickEvent event) {
+
         if (StorageCommand.checkingStorage.contains(player.getName())) {
             return (event.getSlot() == -999
              || event.getCurrentItem() == null
@@ -65,6 +81,7 @@ public class GUIListener implements Listener {
         }
 
         return false;
+
     }
 
 }

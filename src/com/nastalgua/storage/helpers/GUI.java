@@ -1,19 +1,22 @@
 package com.nastalgua.storage.helpers;
 
+import com.nastalgua.storage.Main;
 import com.nastalgua.storage.commands.StorageCommand;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.inventory.meta.SkullMeta;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class GUI {
+
+    public static Pagination<OfflinePlayer> addPlayersPagination = new Pagination<>(Main.testPlayers);
 
     public static void openChestGUI(Player player) {
         Inventory gui = Bukkit.createInventory(null, 27, player.getDisplayName() + "'s Chest");
@@ -58,20 +61,12 @@ public class GUI {
 
     public static void showAddPlayers(Player player) {
         // TODO: Pagination
-        Inventory gui = Bukkit.createInventory(null, 54, "Add Players");
+        Inventory gui = Bukkit.createInventory(null, 27, "Add Player");
+        // Bukkit.getServer().getOnlinePlayers().toArray()
+//        addPlayersPagination = new Pagination<>(Main.testPlayers);
+        addPlayersPagination.updateList(Main.testPlayers);
 
-        int slot = 0;
-
-        for (Player onlinePlayer : Bukkit.getServer().getOnlinePlayers()) {
-            ItemStack playerSkull = new ItemStack(Material.PLAYER_HEAD, 1);
-            SkullMeta playerSkullMeta = (SkullMeta) playerSkull.getItemMeta();
-            playerSkullMeta.setOwningPlayer(onlinePlayer);
-            playerSkull.setItemMeta(playerSkullMeta);
-
-            gui.setItem(slot, playerSkull);
-
-            slot++;
-        }
+        addPlayersPagination.loadPage(gui, Material.PLAYER_HEAD, null, null, player);
 
         player.openInventory(gui);
     }
