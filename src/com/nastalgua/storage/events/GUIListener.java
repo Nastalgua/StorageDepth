@@ -12,6 +12,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.meta.SkullMeta;
 
 public class GUIListener implements Listener {
 
@@ -24,9 +25,7 @@ public class GUIListener implements Listener {
 
         Player player = (Player) event.getWhoClicked();
 
-        if (StorageCommand.checkingStorage.contains(player.getName()) && !invalidClick(event, player)) {
-            event.setCancelled(true);
-        }
+        if (StorageCommand.checkingStorage.contains(player.getName()) && !invalidClick(event, player)) event.setCancelled(true);
 
         if (!invalidClick(event, player)) {
 
@@ -50,6 +49,18 @@ public class GUIListener implements Listener {
                 GUI.showHistory(player);
                 Pagination.currentGUI = Pagination.GUIStatus.HISTORY;
 
+            } else if (event.getCurrentItem().getType() == Material.PLAYER_HEAD) {
+                SkullMeta skull = (SkullMeta) event.getCurrentItem().getItemMeta();
+                switch (Pagination.currentGUI) {
+                    case ADD_PLAYERS:
+                        StorageCommand.addPlayer(player, skull.getOwningPlayer().getName(), skull.getOwningPlayer().getUniqueId().toString());
+                        break;
+                    case HISTORY:
+                        break;
+                    case REMOVE_PLAYERS:
+                        StorageCommand.removePlayer(player, skull.getOwningPlayer().getName(), skull.getOwningPlayer().getUniqueId().toString());
+                        break;
+                }
             }
 
             // make sure player doesn't click anything other than gui
@@ -131,5 +142,6 @@ public class GUIListener implements Listener {
 
         }
     }
+
 
 }

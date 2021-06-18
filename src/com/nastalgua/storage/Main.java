@@ -1,5 +1,7 @@
 package com.nastalgua.storage;
 
+import com.nastalgua.storage.events.Open;
+import com.nastalgua.storage.events.Placement;
 import com.nastalgua.storage.helpers.Pagination;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -15,7 +17,6 @@ import java.util.List;
 public class Main extends JavaPlugin {
 
     public static List<OfflinePlayer> testPlayers = new ArrayList<OfflinePlayer>();
-    public static Pagination[] pages = new Pagination[3];
 
     @Override
     public void onEnable() {
@@ -25,6 +26,8 @@ public class Main extends JavaPlugin {
         getCommand("storage").setExecutor(new StorageCommand());
 
         Bukkit.getPluginManager().registerEvents(new GUIListener(), this);
+        Bukkit.getPluginManager().registerEvents(new Open(), this);
+        Bukkit.getPluginManager().registerEvents(new Placement(), this);
 
         testPlayers.add(Bukkit.getOfflinePlayer("T3Rex"));
         testPlayers.add(Bukkit.getOfflinePlayer("Kauo"));

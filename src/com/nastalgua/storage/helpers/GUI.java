@@ -2,17 +2,20 @@ package com.nastalgua.storage.helpers;
 
 import com.nastalgua.storage.Main;
 import com.nastalgua.storage.commands.StorageCommand;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Material;
-import org.bukkit.OfflinePlayer;
+import com.nastalgua.storage.events.Placement;
+import org.bukkit.*;
+import org.bukkit.block.TileState;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class GUI {
 
@@ -64,7 +67,15 @@ public class GUI {
     public static void showAddPlayers(Player player) {
         Inventory gui = Bukkit.createInventory(null, 27, "Add Player");
 
-        List<OfflinePlayer> players = Main.getOnlinePlayers();
+        List<OfflinePlayer> players = new ArrayList<>();
+
+        for (OfflinePlayer p : Main.testPlayers) {
+            if (p.getUniqueId() == player.getUniqueId()) continue;
+            if (StorageCommand.alreadyAdded(p.getUniqueId().toString())) continue;
+
+            players.add(p);
+
+        }
 
         addPlayersPagination.updateList(players);
         addPlayersPagination.loadPage(gui, Material.PLAYER_HEAD, null, null, true);
@@ -75,7 +86,22 @@ public class GUI {
     public static void showRemovePlayers(Player player) {
         Inventory gui = Bukkit.createInventory(null, 27, "Remove Players");
 
-        removePlayersPagination.updateList(Main.testPlayers);
+        List<OfflinePlayer> players = new ArrayList<>();
+
+        TileState state = (TileState) StorageCommand.currentBlock.getState();
+        PersistentDataContainer container = state.getPersistentDataContainer();
+
+        NamespacedKey key = new NamespacedKey(Main.getPlugin(Main.class), Placement.KEY_NAME);
+
+        String str = container.get(key, PersistentDataType.STRING);
+
+        // get all players already added
+        for (int i = 0; i < str.length(); i += 38) {
+            OfflinePlayer p = Bukkit.getOfflinePlayer(UUID.fromString(str.substring(i, i + 36)));
+            players.add(p);
+        }
+
+        removePlayersPagination.updateList(players);
         removePlayersPagination.loadPage(gui, Material.PLAYER_HEAD, null, null, true);
 
         player.openInventory(gui);

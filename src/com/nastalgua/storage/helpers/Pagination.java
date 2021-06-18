@@ -14,7 +14,6 @@ import java.util.List;
 public class Pagination<T> {
 
     public enum GUIStatus {
-        NOTHING(-1),
         ADD_PLAYERS(0),
         HISTORY(1),
         REMOVE_PLAYERS(2);
@@ -30,23 +29,22 @@ public class Pagination<T> {
         }
     }
 
-    static final String IGN_RIGHT = "MHF_ArrowRight";
-    static final String IGN_LEFT = "MHF_ArrowLeft";
+    public static final String IGN_RIGHT = "MHF_ArrowRight";
+    public static final String IGN_LEFT = "MHF_ArrowLeft";
 
     public static final String RIGHT_NAME = "Next Page";
     public static final String LEFT_NAME = "Previous Page";
 
-    public static ItemStack arrowRight = new ItemStack(Material.PLAYER_HEAD, 1);
-    public static ItemStack arrowLeft = new ItemStack(Material.PLAYER_HEAD, 1);
+    public static ItemStack arrowRight = new ItemStack(Material.ARROW, 1);
+    public static ItemStack arrowLeft = new ItemStack(Material.ARROW, 1);
 
 
-    public static final int PAGE_SLOT_COUNT = 6;
+    public static final int PAGE_SLOT_COUNT = 7;
 
     public static GUIStatus currentGUI = GUIStatus.ADD_PLAYERS;
 
     private List<T> list;
     public int currentPage = 1;
-
 
     public Pagination(List<T> list) {
         this.list = list;
@@ -68,13 +66,11 @@ public class Pagination<T> {
             List<String> rightLore = new ArrayList<>();
             rightLore.add("View next page...");
 
-            SkullMeta rightMeta = (SkullMeta) arrowRight.getItemMeta();
-
-            assert rightMeta != null;
-            rightMeta.setOwningPlayer(Bukkit.getOfflinePlayer(IGN_RIGHT)); // is deprecated, but simple solution
+            ItemMeta rightMeta = arrowRight.getItemMeta();
 
             rightMeta.setDisplayName(RIGHT_NAME);
             rightMeta.setLore(rightLore);
+
             arrowRight.setItemMeta(rightMeta);
 
             inv.setItem(inv.getSize() - 1, arrowRight);
@@ -85,10 +81,7 @@ public class Pagination<T> {
             List<String> leftLore = new ArrayList<>();
             leftLore.add("View previous page...");
 
-            SkullMeta leftMeta = (SkullMeta) arrowLeft.getItemMeta();
-
-            assert leftMeta != null;
-            leftMeta.setOwningPlayer(Bukkit.getOfflinePlayer(IGN_LEFT)); // is deprecated, but simple solution
+            ItemMeta leftMeta = arrowLeft.getItemMeta();
 
             leftMeta.setDisplayName(LEFT_NAME);
             leftMeta.setLore(leftLore);
