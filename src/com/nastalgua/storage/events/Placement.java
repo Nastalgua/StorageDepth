@@ -24,7 +24,7 @@ public class Placement implements Listener {
 
         NamespacedKey key = new NamespacedKey(Main.getPlugin(Main.class), KEY_NAME);
 
-        container.set(key, PersistentDataType.STRING, event.getPlayer().getUniqueId().toString());
+        container.set(key, PersistentDataType.STRING, event.getPlayer().getUniqueId().toString() + ",");
 
         state.update();
 

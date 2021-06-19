@@ -4,18 +4,15 @@ import com.nastalgua.storage.Main;
 import com.nastalgua.storage.commands.StorageCommand;
 import com.nastalgua.storage.events.Placement;
 import org.bukkit.*;
-import org.bukkit.block.TileState;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class GUI {
 
@@ -81,6 +78,7 @@ public class GUI {
         addPlayersPagination.loadPage(gui, Material.PLAYER_HEAD, null, null, true);
 
         player.openInventory(gui);
+
     }
 
     public static void showRemovePlayers(Player player) {
@@ -88,17 +86,23 @@ public class GUI {
 
         List<OfflinePlayer> players = new ArrayList<>();
 
-        TileState state = (TileState) StorageCommand.currentBlock.getState();
-        PersistentDataContainer container = state.getPersistentDataContainer();
+        PersistentData data = new PersistentData(Placement.KEY_NAME);
 
-        NamespacedKey key = new NamespacedKey(Main.getPlugin(Main.class), Placement.KEY_NAME);
-
-        String str = container.get(key, PersistentDataType.STRING);
+        String str = data.container.get(data.key, PersistentDataType.STRING);
 
         // get all players already added
-        for (int i = 0; i < str.length(); i += 38) {
-            OfflinePlayer p = Bukkit.getOfflinePlayer(UUID.fromString(str.substring(i, i + 36)));
+        int oldIndex = 0;
+        for (int i = 0; i < str.length(); i++) {
+            if (str.charAt(i) != ',') continue;
+            if (oldIndex == i) continue;
+
+            OfflinePlayer p = Bukkit.getOfflinePlayer(UUID.fromString(str.substring(oldIndex, i)));
+            oldIndex = i + 1;
+
+            if (p.getUniqueId().toString().equalsIgnoreCase(player.getUniqueId().toString())) continue;
+
             players.add(p);
+
         }
 
         removePlayersPagination.updateList(players);

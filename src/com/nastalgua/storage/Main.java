@@ -2,7 +2,6 @@ package com.nastalgua.storage;
 
 import com.nastalgua.storage.events.Open;
 import com.nastalgua.storage.events.Placement;
-import com.nastalgua.storage.helpers.Pagination;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
@@ -37,7 +36,6 @@ public class Main extends JavaPlugin {
         testPlayers.add(Bukkit.getOfflinePlayer("b1ui"));
         testPlayers.add(Bukkit.getOfflinePlayer("UwUDucky_"));
         testPlayers.add(Bukkit.getOfflinePlayer("FullpowerBoy"));
-        testPlayers.add(Bukkit.getOfflinePlayer("yaazy"));
         testPlayers.add(Bukkit.getOfflinePlayer("UggaMcBugga"));
 
     }
@@ -56,4 +54,5 @@ public class Main extends JavaPlugin {
 
         return players;
     }
+
 }

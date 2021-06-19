@@ -1,20 +1,17 @@
 package com.nastalgua.storage.commands;
 
-import com.nastalgua.storage.Main;
 import com.nastalgua.storage.events.Open;
 import com.nastalgua.storage.events.Placement;
 import com.nastalgua.storage.helpers.GUI;
+import com.nastalgua.storage.helpers.PersistentData;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
-import org.bukkit.block.TileState;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.meta.SkullMeta;
-import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.util.ArrayList;
@@ -22,6 +19,8 @@ import java.util.List;
 import java.util.Set;
 
 public class StorageCommand implements CommandExecutor {
+
+    final String ALREADY_ADDED = "This player already has been added.";
 
     public static List<String> checkingStorage = new ArrayList<>();
     public static Block currentBlock = null;
@@ -40,13 +39,10 @@ public class StorageCommand implements CommandExecutor {
             return false;
         }
 
-        TileState state = (TileState) cBlock.getState();
-        PersistentDataContainer container = state.getPersistentDataContainer();
+        PersistentData data = new PersistentData(Placement.KEY_NAME);
 
-        NamespacedKey key = new NamespacedKey(Main.getPlugin(Main.class), Placement.KEY_NAME);
-
-        if (!container.has(key, PersistentDataType.STRING)) return false;
-        if (!container.get(key, PersistentDataType.STRING).contains(player.getUniqueId().toString())) {
+        if (!data.container.has(data.key, PersistentDataType.STRING)) return false;
+        if (!data.container.get(data.key, PersistentDataType.STRING).contains(player.getUniqueId().toString())) {
             player.sendMessage(Open.blockMsg);
             return false;
         }
@@ -60,10 +56,34 @@ public class StorageCommand implements CommandExecutor {
             GUI.openChestGUI(player);
         }
 
+        if (args.length > 2) player.sendMessage("Provided too many arguments!");
+
+        String playerUUID = Bukkit.getPlayer(args[1]).getUniqueId().toString();
+
         switch (subCmd) {
             case "add":
+                if (!alreadyAdded(playerUUID)) {
+                    addPlayer(player, args[1], playerUUID);
+                } else {
+                    player.sendMessage(ALREADY_ADDED);
+                }
+
                 break;
             case "remove":
+
+                // DO NOT REMOVE THIS IF STATEMENT
+                // Storage block will be stuck in the world.
+                if (data.container.get(data.key, PersistentDataType.STRING).contains(player.getUniqueId().toString())) {
+                    player.sendMessage("Nice try.");
+                    break;
+                }
+
+                if (data.container.get(data.key, PersistentDataType.STRING).contains(playerUUID)) {
+                    removePlayer(player, args[1], playerUUID);
+                } else {
+                    player.sendMessage("That player already has no access to this storage block.");
+                }
+
                 break;
         }
 
@@ -79,44 +99,35 @@ public class StorageCommand implements CommandExecutor {
     }
 
     public static boolean alreadyAdded(String playerUUID) {
-        TileState state = (TileState) currentBlock.getState();
-        PersistentDataContainer container = state.getPersistentDataContainer();
+        PersistentData data = new PersistentData(Placement.KEY_NAME);
 
-        NamespacedKey key = new NamespacedKey(Main.getPlugin(Main.class), Placement.KEY_NAME);
+        if (!data.container.has(data.key, PersistentDataType.STRING)) return false;
 
-        if (!container.has(key, PersistentDataType.STRING)) return false;
-
-        String str = container.get(key, PersistentDataType.STRING);
+        String str = data.container.get(data.key, PersistentDataType.STRING);
 
         return str.contains(playerUUID);
+
     }
 
     public static void addPlayer(Player fromPlayer, String toPlayerName, String toPlayerUUID) {
-        TileState state = (TileState) StorageCommand.currentBlock.getState();
-        PersistentDataContainer container = state.getPersistentDataContainer();
+        PersistentData data = new PersistentData(Placement.KEY_NAME);
 
-        NamespacedKey key = new NamespacedKey(Main.getPlugin(Main.class), Placement.KEY_NAME);
+        String str = data.container.get(data.key, PersistentDataType.STRING) + toPlayerUUID + ",";
 
-        String str = container.get(key, PersistentDataType.STRING) + " " + toPlayerUUID;
-
-        container.set(key, PersistentDataType.STRING, str);
-        state.update();
+        data.container.set(data.key, PersistentDataType.STRING, str);
+        data.state.update();
 
         fromPlayer.sendMessage("! Added " + toPlayerName + " !");
         fromPlayer.closeInventory();
     }
 
     public static void removePlayer(Player fromPlayer, String toPlayerName, String toPlayerUUID) {
-        TileState state = (TileState) StorageCommand.currentBlock.getState();
+        PersistentData data = new PersistentData(Placement.KEY_NAME);
 
-        PersistentDataContainer container = state.getPersistentDataContainer();
+        String str = data.container.get(data.key, PersistentDataType.STRING).replace(toPlayerUUID + ",", "");
 
-        NamespacedKey key = new NamespacedKey(Main.getPlugin(Main.class), Placement.KEY_NAME);
-
-        String str = container.get(key, PersistentDataType.STRING).replace(toPlayerUUID, "");
-
-        container.set(key, PersistentDataType.STRING, str);
-        state.update();
+        data.container.set(data.key, PersistentDataType.STRING, str);
+        data.state.update();
 
         fromPlayer.sendMessage("! Removed " + toPlayerName + " !");
         fromPlayer.closeInventory();
