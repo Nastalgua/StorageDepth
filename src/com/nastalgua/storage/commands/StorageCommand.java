@@ -39,7 +39,7 @@ public class StorageCommand implements CommandExecutor {
             return false;
         }
 
-        PersistentData data = new PersistentData(Placement.KEY_NAME);
+        PersistentData data = new PersistentData(Placement.KEY_NAME, currentBlock);
 
         if (!data.container.has(data.key, PersistentDataType.STRING)) return false;
         if (!data.container.get(data.key, PersistentDataType.STRING).contains(player.getUniqueId().toString())) {
@@ -52,8 +52,8 @@ public class StorageCommand implements CommandExecutor {
         if (args.length > 0) {
             subCmd = args[0].toLowerCase();
         } else {
-            subCmd = "";
             GUI.openChestGUI(player);
+            return false;
         }
 
         if (args.length > 2) player.sendMessage("Provided too many arguments!");
@@ -70,7 +70,6 @@ public class StorageCommand implements CommandExecutor {
 
                 break;
             case "remove":
-
                 // DO NOT REMOVE THIS IF STATEMENT
                 // Storage block will be stuck in the world.
                 if (data.container.get(data.key, PersistentDataType.STRING).contains(player.getUniqueId().toString())) {
@@ -99,7 +98,7 @@ public class StorageCommand implements CommandExecutor {
     }
 
     public static boolean alreadyAdded(String playerUUID) {
-        PersistentData data = new PersistentData(Placement.KEY_NAME);
+        PersistentData data = new PersistentData(Placement.KEY_NAME, currentBlock);
 
         if (!data.container.has(data.key, PersistentDataType.STRING)) return false;
 
@@ -110,7 +109,7 @@ public class StorageCommand implements CommandExecutor {
     }
 
     public static void addPlayer(Player fromPlayer, String toPlayerName, String toPlayerUUID) {
-        PersistentData data = new PersistentData(Placement.KEY_NAME);
+        PersistentData data = new PersistentData(Placement.KEY_NAME, currentBlock);
 
         String str = data.container.get(data.key, PersistentDataType.STRING) + toPlayerUUID + ",";
 
@@ -122,7 +121,7 @@ public class StorageCommand implements CommandExecutor {
     }
 
     public static void removePlayer(Player fromPlayer, String toPlayerName, String toPlayerUUID) {
-        PersistentData data = new PersistentData(Placement.KEY_NAME);
+        PersistentData data = new PersistentData(Placement.KEY_NAME, currentBlock);
 
         String str = data.container.get(data.key, PersistentDataType.STRING).replace(toPlayerUUID + ",", "");
 

@@ -3,21 +3,24 @@ package com.nastalgua.storage.helpers;
 import com.nastalgua.storage.Main;
 import com.nastalgua.storage.commands.StorageCommand;
 import com.nastalgua.storage.events.Placement;
-import org.bukkit.*;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.block.Chest;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class GUI {
 
     public static Pagination<OfflinePlayer> addPlayersPagination = new Pagination<>(Main.testPlayers);
     public static Pagination<OfflinePlayer> removePlayersPagination = new Pagination<>(Main.testPlayers);
+    public static Pagination<String> historyPagination = new Pagination<>(new ArrayList<>());
 
     public static void openChestGUI(Player player) {
         Inventory gui = Bukkit.createInventory(null, 27, player.getDisplayName() + "'s Chest");
@@ -66,7 +69,7 @@ public class GUI {
 
         List<OfflinePlayer> players = new ArrayList<>();
 
-        for (OfflinePlayer p : Main.testPlayers) {
+        for (OfflinePlayer p : Main.getOnlinePlayers()) {
             if (p.getUniqueId() == player.getUniqueId()) continue;
             if (StorageCommand.alreadyAdded(p.getUniqueId().toString())) continue;
 
@@ -86,7 +89,7 @@ public class GUI {
 
         List<OfflinePlayer> players = new ArrayList<>();
 
-        PersistentData data = new PersistentData(Placement.KEY_NAME);
+        PersistentData data = new PersistentData(Placement.KEY_NAME, StorageCommand.currentBlock);
 
         String str = data.container.get(data.key, PersistentDataType.STRING);
 
@@ -113,6 +116,78 @@ public class GUI {
 
     public static void showHistory(Player player) {
         Inventory gui = Bukkit.createInventory(null, 27, "History");
+
+        PersistentData data = new PersistentData(PersistentData.HISTORY_NAME, StorageCommand.currentBlock);
+        String str = data.container.get(data.key, PersistentDataType.STRING);
+
+        List<String> playerNames = new ArrayList<>();
+        List<String> changesStr = new ArrayList<>();
+
+        int left = -1;
+        int right = -1;
+        for (int i = 0; i < str.length(); i++) {
+            if (str.charAt(i) == '\\') left = i;
+            if (str.charAt(i) == '/') right = i;
+
+            if (left != -1 && right != -1) {
+                playerNames.add(str.substring(left + 1, right));
+
+                left = -1;
+                right = -1;
+            }
+        }
+
+        left = -1;
+        right = -1;
+        for (int i = 0; i < str.length(); i++) {
+            if (str.charAt(i) == '<') left = i;
+            if (str.charAt(i) == '>') right = i;
+
+            if (left != -1 && right != -1) {
+                changesStr.add(str.substring(left + 1, right));
+
+                left = -1;
+                right = -1;
+            }
+
+        }
+
+        left = -1;
+        right = -1;
+        List<List<String>> changes = new ArrayList<>();
+        for (String s : changesStr) {
+            List<String> change = new ArrayList<>();
+
+            for (int i = 0; i < s.length(); i++) {
+                if (s.charAt(i) == '{') left = i;
+                if (s.charAt(i) == '}') right = i;
+
+                if (left != -1 && right != -1) {
+                    String changeStr = s.substring(left + 1, right);
+
+                    if (changeStr.charAt(0) == '+') {
+                        change.add(ChatColor.GREEN + changeStr);
+                    } else if (changeStr.charAt(0) == '-') {
+                        change.add(ChatColor.RED + changeStr);
+                    }
+
+                    left = -1;
+                    right = -1;
+                }
+
+            }
+
+            changes.add(change);
+
+        }
+
+        Collections.reverse(changesStr);
+        Collections.reverse(playerNames);
+        Collections.reverse(changes);
+
+        historyPagination.updateList(changesStr);
+        historyPagination.loadPage(gui, Material.PAPER, playerNames, changes, false);
+
         player.openInventory(gui);
     }
 

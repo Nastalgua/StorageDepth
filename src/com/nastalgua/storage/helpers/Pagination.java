@@ -1,6 +1,5 @@
 package com.nastalgua.storage.helpers;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.inventory.Inventory;
@@ -58,7 +57,7 @@ public class Pagination<T> {
         this.list = list;
     }
 
-    public <T> void loadPage(Inventory inv, Material material, String displayName, List<String> lore, boolean isHead) {
+    public <T> void loadPage(Inventory inv, Material material, List<String> displayNames, List<List<String>> lores, boolean isHead) {
         int slot = 10, count = 0;
 
         // right
@@ -104,8 +103,10 @@ public class Pagination<T> {
                 ((SkullMeta) meta).setOwningPlayer((OfflinePlayer) obj);
             }
 
-            meta.setDisplayName(displayName);
-            meta.setLore(lore);
+            if (displayNames != null || lores != null) {
+                meta.setDisplayName(displayNames.get(count));
+                meta.setLore(lores.get(count));
+            }
 
             stack.setItemMeta(meta);
 
