@@ -35,7 +35,6 @@ public class Main extends JavaPlugin {
 
         Bukkit.getServer().getPluginManager().registerEvents(new Open(), this);
         Bukkit.getServer().getPluginManager().registerEvents(new Placement(), this);
-
     }
 
     @Override
