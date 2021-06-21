@@ -2,25 +2,25 @@ package com.nastalgua.storage.helpers;
 
 import com.nastalgua.storage.Main;
 import com.nastalgua.storage.commands.StorageCommand;
-import com.nastalgua.storage.events.Placement;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
-import org.bukkit.block.Chest;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.persistence.PersistentDataType;
 
 import java.util.*;
 
 public class GUI {
 
-    public static Pagination<OfflinePlayer> addPlayersPagination = new Pagination<>(Main.testPlayers);
-    public static Pagination<OfflinePlayer> removePlayersPagination = new Pagination<>(Main.testPlayers);
+    public static Pagination<OfflinePlayer> addPlayersPagination = new Pagination<>(new ArrayList<OfflinePlayer>());
+    public static Pagination<OfflinePlayer> removePlayersPagination = new Pagination<>(new ArrayList<OfflinePlayer>());
     public static Pagination<String> historyPagination = new Pagination<>(new ArrayList<>());
+
+    public static List<String> historyPlayerNames = new ArrayList<>();
+    public static List<List<String>> historyChanges = new ArrayList<>();
 
     public static void openChestGUI(Player player) {
         Inventory gui = Bukkit.createInventory(null, 27, player.getDisplayName() + "'s Chest");
@@ -63,13 +63,12 @@ public class GUI {
         player.openInventory(gui);
     }
 
-    // TODO: Add persistent data and filter out player already added
     public static void showAddPlayers(Player player) {
         Inventory gui = Bukkit.createInventory(null, 27, "Add Player");
 
         List<OfflinePlayer> players = new ArrayList<>();
 
-        for (OfflinePlayer p : Main.getOnlinePlayers()) {
+        for (OfflinePlayer p : Helper.getOnlinePlayers()) {
             if (p.getUniqueId() == player.getUniqueId()) continue;
             if (StorageCommand.alreadyAdded(p.getUniqueId().toString())) continue;
 
@@ -89,9 +88,9 @@ public class GUI {
 
         List<OfflinePlayer> players = new ArrayList<>();
 
-        PersistentData data = new PersistentData(Placement.KEY_NAME, StorageCommand.currentBlock);
+        PersistentData data = new PersistentData(Main.currentBlock);
 
-        String str = data.container.get(data.key, PersistentDataType.STRING);
+        String str = data.containerGetString(PersistentData.USERS_KEY);
 
         // get all players already added
         int oldIndex = 0;
@@ -117,10 +116,9 @@ public class GUI {
     public static void showHistory(Player player) {
         Inventory gui = Bukkit.createInventory(null, 27, "History");
 
-        PersistentData data = new PersistentData(PersistentData.HISTORY_NAME, StorageCommand.currentBlock);
-        String str = data.container.get(data.key, PersistentDataType.STRING);
+        PersistentData data = new PersistentData(Main.currentBlock);
+        String str = data.containerGetString(PersistentData.HISTORY_KEY);
 
-        List<String> playerNames = new ArrayList<>();
         List<String> changesStr = new ArrayList<>();
 
         int left = -1;
@@ -130,7 +128,7 @@ public class GUI {
             if (str.charAt(i) == '/') right = i;
 
             if (left != -1 && right != -1) {
-                playerNames.add(str.substring(left + 1, right));
+                historyPlayerNames.add(str.substring(left + 1, right));
 
                 left = -1;
                 right = -1;
@@ -154,7 +152,7 @@ public class GUI {
 
         left = -1;
         right = -1;
-        List<List<String>> changes = new ArrayList<>();
+
         for (String s : changesStr) {
             List<String> change = new ArrayList<>();
 
@@ -177,16 +175,16 @@ public class GUI {
 
             }
 
-            changes.add(change);
+            historyChanges.add(change);
 
         }
 
         Collections.reverse(changesStr);
-        Collections.reverse(playerNames);
-        Collections.reverse(changes);
+        Collections.reverse(historyPlayerNames);
+        Collections.reverse(historyChanges);
 
         historyPagination.updateList(changesStr);
-        historyPagination.loadPage(gui, Material.PAPER, playerNames, changes, false);
+        historyPagination.loadPage(gui, Material.PAPER, historyPlayerNames, historyChanges, false);
 
         player.openInventory(gui);
     }

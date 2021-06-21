@@ -1,37 +1,59 @@
 package com.nastalgua.storage.events;
 
-import com.nastalgua.storage.Main;
-import com.nastalgua.storage.commands.StorageCommand;
-import org.bukkit.NamespacedKey;
+import com.nastalgua.storage.helpers.Helper;
+import com.nastalgua.storage.helpers.PersistentData;
+
+import org.bukkit.block.Block;
 import org.bukkit.block.TileState;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
 public class Open implements Listener {
 
-    public static final String blockMsg = "You do not own this chest.";
+    public static final String BLOCK_MSG = "You do not own this chest.";
+
+    public Open() {}
 
     @EventHandler
     public void onOpen(PlayerInteractEvent event) {
         if (!event.hasBlock()) return;
-        if (!StorageCommand.isStorageBlock(event.getClickedBlock().getType())) return;
-        if (!(event.getClickedBlock().getState() instanceof TileState)) return;
 
-        TileState state = (TileState) event.getClickedBlock().getState();
-        PersistentDataContainer container = state.getPersistentDataContainer();
+        Block openBlock = event.getClickedBlock();
+        Player player = event.getPlayer();
 
-        NamespacedKey key = new NamespacedKey(Main.getPlugin(Main.class), Placement.KEY_NAME);
+        if (player.isOp()) return;
+        if (!Helper.isStorageBlock(openBlock.getType())) return;
+        if (!(openBlock.getState() instanceof TileState)) return;
 
-        if (!container.has(key, PersistentDataType.STRING)) return;
+        PersistentData openBlockData = new PersistentData(openBlock);
 
-        if (container.get(key, PersistentDataType.STRING).contains(event.getPlayer().getUniqueId().toString())) {
+        String users = "";
+
+        if (openBlockData.containerHas(PersistentData.USERS_KEY, PersistentDataType.STRING)) {
+            users = openBlockData.containerGetString(PersistentData.USERS_KEY);
+        }
+
+        if (openBlockData.containerHas(PersistentData.MASTER_CHEST_KEY, PersistentDataType.INTEGER_ARRAY)) {
+            int[] pos = openBlockData.containerGetIntArray(PersistentData.MASTER_CHEST_KEY);
+
+            Block masterChest = player.getWorld().getBlockAt(pos[0], pos[1], pos[2]);
+
+            if (!(masterChest.getState() instanceof TileState)) return;
+
+            PersistentData masterChestData = new PersistentData(masterChest);
+
+            users = masterChestData.containerGetString(PersistentData.USERS_KEY);
+
+        }
+
+        if (users.contains(player.getUniqueId().toString())) {
             return;
         } else {
             event.setCancelled(true);
-            event.getPlayer().sendMessage(blockMsg);
+            event.getPlayer().sendMessage(BLOCK_MSG);
         }
 
     }

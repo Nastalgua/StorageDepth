@@ -1,73 +1,54 @@
 package com.nastalgua.storage.events;
 
-import com.nastalgua.storage.Main;
-import com.nastalgua.storage.commands.StorageCommand;
+import com.nastalgua.storage.helpers.Helper;
 import com.nastalgua.storage.helpers.PersistentData;
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.block.TileState;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.persistence.PersistentDataContainer;
-import org.bukkit.persistence.PersistentDataType;
 
 public class Placement implements Listener {
 
-    public static final String KEY_NAME = "private-chest";
-    public static final String SECOND_BLOCK = "second-block";
+    public Placement() {}
 
     @EventHandler
     public void onPlace(BlockPlaceEvent event) {
+        Block placedBlock = event.getBlockPlaced();
+        Player player = event.getPlayer();
 
-        // TODO: setup master block (block that is always referred to)
-        if (event.getBlockAgainst().getType() == Material.CHEST) {
-            Block blockAgainst = event.getBlockAgainst();
-            Block thisBlock = event.getBlock();
+        if (!Helper.isStorageBlock(placedBlock.getType())) return;
+        if (!(placedBlock.getState() instanceof TileState)) return;
 
-            TileState againstState = (TileState) blockAgainst.getState();
-            PersistentDataContainer againstContainer = againstState.getPersistentDataContainer();
+        boolean unshiftPlacedChest = Helper.getDoubleChest(placedBlock) != null && !event.getPlayer().isSneaking();
+        boolean shiftPlacedChest = event.getBlockAgainst().getType() == Material.CHEST && event.getPlayer().isSneaking() &&
+                event.getBlock().getRelative(BlockFace.DOWN, 1).getType() != Material.CHEST;
 
-            NamespacedKey againstKey = new NamespacedKey(Main.getPlugin(Main.class), SECOND_BLOCK);
+        PersistentData placedBlockData = new PersistentData(placedBlock);
 
-            int[] againstPos = { thisBlock.getX(), thisBlock.getY(), thisBlock.getZ() };
+        if (unshiftPlacedChest || shiftPlacedChest) { // double chest
+            Block sideChest = Helper.getDoubleChest(placedBlock);
+            PersistentData sideChestData = new PersistentData(sideChest);
 
-            againstContainer.set(againstKey, PersistentDataType.INTEGER_ARRAY, againstPos);
+            int[] sideChestPos = {sideChest.getX(), sideChest.getY(), sideChest.getZ()};
+            placedBlockData.containerSetIntArray(PersistentData.MASTER_CHEST_KEY, sideChestPos);
 
-            TileState state = (TileState) thisBlock.getState();
-            PersistentDataContainer container = state.getPersistentDataContainer();
+            int[] placedChestPos = {placedBlock.getX(), placedBlock.getY(), placedBlock.getZ()};
+            sideChestData.containerSetIntArray(PersistentData.SLAVE_CHEST_KEY, placedChestPos);
 
-            NamespacedKey key = new NamespacedKey(Main.getPlugin(Main.class), KEY_NAME);
-            NamespacedKey historyKey = new NamespacedKey(Main.getPlugin(Main.class), PersistentData.HISTORY_NAME);
+            sideChestData.update();
 
-            int[] pos = { blockAgainst.getX(), blockAgainst.getY(), blockAgainst.getZ() };
+        } else { // single storage block
+            placedBlockData.containerSetString(PersistentData.USERS_KEY, player.getUniqueId() + ",");
+            placedBlockData.containerSetString(PersistentData.HISTORY_KEY, "");
 
-            container.set(againstKey, PersistentDataType.INTEGER_ARRAY, pos);
-            container.set(key, PersistentDataType.STRING, event.getPlayer().getUniqueId().toString() + ",");
-            container.set(historyKey, PersistentDataType.STRING, "");
-
-            againstState.update();
-            state.update();
-
-            return;
+            player.sendMessage("Chest Locked");
         }
 
-        if (!StorageCommand.isStorageBlock(event.getBlock().getType())) return;
-        if (!(event.getBlock().getState() instanceof TileState)) return;
-
-        TileState state = (TileState) event.getBlock().getState();
-        PersistentDataContainer container = state.getPersistentDataContainer();
-
-        NamespacedKey key = new NamespacedKey(Main.getPlugin(Main.class), KEY_NAME);
-        NamespacedKey historyKey = new NamespacedKey(Main.getPlugin(Main.class), PersistentData.HISTORY_NAME);
-
-        container.set(key, PersistentDataType.STRING, event.getPlayer().getUniqueId().toString() + ",");
-        container.set(historyKey, PersistentDataType.STRING, "");
-
-        state.update();
-
-        event.getPlayer().sendMessage("Chest Locked!");
+        placedBlockData.update();
 
     }
 

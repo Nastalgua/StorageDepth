@@ -1,8 +1,9 @@
 package com.nastalgua.storage.commands;
 
+import com.nastalgua.storage.Main;
 import com.nastalgua.storage.events.Open;
-import com.nastalgua.storage.events.Placement;
 import com.nastalgua.storage.helpers.GUI;
+import com.nastalgua.storage.helpers.Helper;
 import com.nastalgua.storage.helpers.PersistentData;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -23,27 +24,34 @@ public class StorageCommand implements CommandExecutor {
     final String ALREADY_ADDED = "This player already has been added.";
 
     public static List<String> checkingStorage = new ArrayList<>();
-    public static Block currentBlock = null;
 
     @Override
     public boolean onCommand(CommandSender commandSender, Command command, String label, String[] args) {
 
         Player player = (Player) commandSender;
 
-        // check if looking at storage block
-        Block cBlock = player.getTargetBlock((Set<Material>) null, 10);
-        currentBlock = cBlock;
+        Main.currentBlock = player.getTargetBlock((Set<Material>) null, 10);
 
-        if (!isStorageBlock(cBlock.getType())) {
+        if (!Helper.isStorageBlock(Main.currentBlock.getType())) {
             player.sendMessage(ChatColor.BOLD + "" + ChatColor.RED + "Please look at a storage block...");
             return false;
         }
 
-        PersistentData data = new PersistentData(Placement.KEY_NAME, currentBlock);
+        PersistentData currentBlockData = new PersistentData(Main.currentBlock);
 
-        if (!data.container.has(data.key, PersistentDataType.STRING)) return false;
-        if (!data.container.get(data.key, PersistentDataType.STRING).contains(player.getUniqueId().toString())) {
-            player.sendMessage(Open.blockMsg);
+        // double chest: slave chest shifts to master chest
+        if (currentBlockData.containerHas(PersistentData.MASTER_CHEST_KEY, PersistentDataType.INTEGER_ARRAY)) {
+            int[] pos = currentBlockData.containerGetIntArray(PersistentData.MASTER_CHEST_KEY);
+
+            Block masterBlock = player.getWorld().getBlockAt(pos[0], pos[1], pos[2]);
+
+            Main.currentBlock = masterBlock;
+            currentBlockData = new PersistentData(masterBlock);
+        }
+
+        if (!currentBlockData.containerHas(PersistentData.USERS_KEY, PersistentDataType.STRING)) return false;
+        if (!currentBlockData.containerGetString(PersistentData.USERS_KEY).contains(player.getUniqueId().toString())) {
+            player.sendMessage(Open.BLOCK_MSG);
             return false;
         }
 
@@ -72,12 +80,13 @@ public class StorageCommand implements CommandExecutor {
             case "remove":
                 // DO NOT REMOVE THIS IF STATEMENT
                 // Storage block will be stuck in the world.
-                if (data.container.get(data.key, PersistentDataType.STRING).contains(player.getUniqueId().toString())) {
+                if (currentBlockData.containerGetString(PersistentData.USERS_KEY)
+                        .contains(player.getUniqueId().toString())) {
                     player.sendMessage("Nice try.");
                     break;
                 }
 
-                if (data.container.get(data.key, PersistentDataType.STRING).contains(playerUUID)) {
+                if (currentBlockData.containerGetString(PersistentData.USERS_KEY).contains(playerUUID)) {
                     removePlayer(player, args[1], playerUUID);
                 } else {
                     player.sendMessage("That player already has no access to this storage block.");
@@ -89,44 +98,39 @@ public class StorageCommand implements CommandExecutor {
         return false;
     }
 
-    public static boolean isStorageBlock(Material block) {
-        return  block == Material.CHEST ||
-                (block.ordinal() >= Material.WHITE_SHULKER_BOX.ordinal() && block.ordinal() <= Material.BLACK_SHULKER_BOX.ordinal()) ||
-                block == Material.BARREL ||
-                block == Material.TRAPPED_CHEST ||
-                block == Material.CHEST_MINECART;
+    public static boolean isCheckingStorage(String playerName) {
+        return checkingStorage.contains(playerName);
     }
 
     public static boolean alreadyAdded(String playerUUID) {
-        PersistentData data = new PersistentData(Placement.KEY_NAME, currentBlock);
+        PersistentData data = new PersistentData(Main.currentBlock);
 
-        if (!data.container.has(data.key, PersistentDataType.STRING)) return false;
+        if (!data.containerHas(PersistentData.USERS_KEY, PersistentDataType.STRING)) return false;
 
-        String str = data.container.get(data.key, PersistentDataType.STRING);
-
-        return str.contains(playerUUID);
+        return data.containerGetString(PersistentData.USERS_KEY).contains(playerUUID);
 
     }
 
     public static void addPlayer(Player fromPlayer, String toPlayerName, String toPlayerUUID) {
-        PersistentData data = new PersistentData(Placement.KEY_NAME, currentBlock);
+        PersistentData data = new PersistentData(Main.currentBlock);
 
-        String str = data.container.get(data.key, PersistentDataType.STRING) + toPlayerUUID + ",";
+        String str = data.containerGetString(PersistentData.USERS_KEY) + toPlayerUUID + ",";
+        data.containerSetString(PersistentData.USERS_KEY, str);
 
-        data.container.set(data.key, PersistentDataType.STRING, str);
-        data.state.update();
+        data.update();
 
         fromPlayer.sendMessage("! Added " + toPlayerName + " !");
         fromPlayer.closeInventory();
+
     }
 
     public static void removePlayer(Player fromPlayer, String toPlayerName, String toPlayerUUID) {
-        PersistentData data = new PersistentData(Placement.KEY_NAME, currentBlock);
+        PersistentData data = new PersistentData(Main.currentBlock);
 
-        String str = data.container.get(data.key, PersistentDataType.STRING).replace(toPlayerUUID + ",", "");
+        String str = data.containerGetString(PersistentData.USERS_KEY).replace(toPlayerUUID + ",", "");
 
-        data.container.set(data.key, PersistentDataType.STRING, str);
-        data.state.update();
+        data.containerSetString(PersistentData.USERS_KEY, str);
+        data.update();
 
         fromPlayer.sendMessage("! Removed " + toPlayerName + " !");
         fromPlayer.closeInventory();
